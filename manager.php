@@ -20,38 +20,39 @@ const CONFIG = [
 
 try {
     $input = @file_get_contents('php://input');
+    $debug = [];
     if ($input === false || strlen($input) === 0) {
-        echo "DEBUG: Empty or unreadable request body\n";
+        $debug[] = "Empty or unreadable request body";
         throw new Exception("请求内容不可读");
     }
 
     $data = json_decode($input, true, 512, JSON_BIGINT_AS_STRING | JSON_THROW_ON_ERROR);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo "DEBUG: JSON decode error: " . json_last_error_msg() . "\n";
+        $debug[] = "JSON decode error: " . json_last_error_msg();
         throw new Exception("请求体解析失败: " . json_last_error_msg());
     }
 
-    echo "DEBUG: Received data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
+    $debug[] = "Received data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
     $message = trim($data['message'] ?? '');
     $history = $data['history'] ?? [];
 
     if (!is_array($history)) {
-        echo "DEBUG: Invalid history format\n";
+        $debug[] = "Invalid history format";
         throw new Exception("无效的历史数据格式");
     }
 
     if (empty($message)) {
-        echo "DEBUG: Empty message\n";
+        $debug[] = "Empty message";
         throw new Exception("消息内容不能为空");
     }
     if (strlen($message) > CONFIG['max_length']) {
-        echo "DEBUG: Message too long\n";
+        $debug[] = "Message too long";
         throw new Exception("输入内容过长");
     }
 
-    echo "DEBUG: Validated message: $message\n";
-    echo "DEBUG: Validated history: " . json_encode($history, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
+    $debug[] = "Validated message: $message";
+    $debug[] = "Validated history: " . json_encode($history, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
     $messagesChain = [
         ["role" => "system", "content" => "回答内容与思考过程不要重复"]
@@ -154,10 +155,10 @@ try {
     echo json_encode($output, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
 } catch (Exception $e) {
-    file_put_contents('debug.log', "Error: " . $e->getMessage() . "\n", FILE_APPEND);
     http_response_code(400);
     echo json_encode([
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
+        'debug' => $debug
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 }
