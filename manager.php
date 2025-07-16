@@ -21,21 +21,27 @@ const CONFIG = [
 try {
     $input = @file_get_contents('php://input');
     if ($input === false || strlen($input) === 0) {
+        file_put_contents('debug.log', "Empty or unreadable request body\n", FILE_APPEND);
         throw new Exception("请求内容不可读");
     }
 
     $data = json_decode($input, true, 512, JSON_BIGINT_AS_STRING | JSON_THROW_ON_ERROR);
+    file_put_contents('debug.log', "Received data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+
     $message = trim($data['message'] ?? '');
     $history = $data['history'] ?? [];
 
     if (!is_array($history)) {
+        file_put_contents('debug.log', "Invalid history format\n", FILE_APPEND);
         throw new Exception("无效的历史数据格式");
     }
 
     if (empty($message)) {
+        file_put_contents('debug.log', "Empty message\n", FILE_APPEND);
         throw new Exception("消息内容不能为空");
     }
     if (strlen($message) > CONFIG['max_length']) {
+        file_put_contents('debug.log', "Message too long\n", FILE_APPEND);
         throw new Exception("输入内容过长");
     }
 
@@ -107,20 +113,25 @@ try {
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
+    file_put_contents('debug.log', "HTTP Code: $httpCode\nResponse: $response\n", FILE_APPEND);
+
     if (curl_errno($ch)) {
+        file_put_contents('debug.log', "cURL error: " . curl_error($ch) . "\n", FILE_APPEND);
         throw new Exception('请求失败: ' . curl_error($ch));
     }
 
     curl_close($ch);
 
     if ($httpCode !== 200) {
-        throw new Exception('API返回错误，HTTP状态码: ' . $httpCode);
+        file_put_contents('debug.log', "API returned HTTP $httpCode\n", FILE_APPEND);
+        throw new Exception('API返回错误，HTTP状态码: ' . $httpCode . '，响应内容: ' . $response);
     }
 
     $result = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
 
     if (!isset($result['choices'][0]['message']['content'])) {
-        throw new Exception('API响应格式无效');
+        file_put_contents('debug.log', "Invalid API response format\n", FILE_APPEND);
+        throw new Exception('API响应格式无效: ' . $response);
     }
 
     $output = [
@@ -135,6 +146,7 @@ try {
     echo json_encode($output, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
 } catch (Exception $e) {
+    file_put_contents('debug.log', "Error: " . $e->getMessage() . "\n", FILE_APPEND);
     http_response_code(400);
     echo json_encode([
         'status' => 'error',
