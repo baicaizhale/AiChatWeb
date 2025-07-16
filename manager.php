@@ -147,16 +147,38 @@ try {
         throw new Exception('API响应格式无效: ' . $response);
     }
 
-    $output = [
-        'status' => 'success',
-        'message' => '请求成功',
-        'data' => [
-            'response' => $reply
-        ]
-    ];
-
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($output, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    // 流式响应实现
+    header('Content-Type: application/x-ndjson; charset=utf-8');
+    header('Cache-Control: no-cache');
+    header('X-Accel-Buffering: no');
+    if (isset($result['result']['response'])) {
+        // 如果API返回的是完整内容，直接分块输出
+        $chunks = preg_split('/(\n|<think>|<\/think>)/', $result['result']['response']);
+        foreach ($chunks as $chunk) {
+            $chunk = trim($chunk);
+            if ($chunk !== '') {
+                echo json_encode(["content" => $chunk], JSON_UNESCAPED_UNICODE) . "\n";
+                @ob_flush();
+                @flush();
+                usleep(100000); // 模拟流式
+            }
+        }
+    } elseif (isset($result['choices'][0]['message']['content'])) {
+        // 兼容旧格式
+        $chunks = preg_split('/(\n|<think>|<\/think>)/', $result['choices'][0]['message']['content']);
+        foreach ($chunks as $chunk) {
+            $chunk = trim($chunk);
+            if ($chunk !== '') {
+                echo json_encode(["content" => $chunk], JSON_UNESCAPED_UNICODE) . "\n";
+                @ob_flush();
+                @flush();
+                usleep(100000);
+            }
+        }
+    } else {
+        throw new Exception('API响应格式无效: ' . $response);
+    }
+    exit;
 
 } catch (Exception $e) {
     http_response_code(400);

@@ -221,20 +221,17 @@ async function sendMessage() {
     const message = messageInput.value.trim();
     if (!message) return;
 
-    // 禁用输入框和按钮
     messageInput.disabled = true;
     sendButton.disabled = true;
 
-    // 添加用户消息到界面
     addMessage(message, 'user');
     chatHistory.push({ role: 'user', content: message });
     messageInput.value = '';
 
-    // 显示思考中
     showThinking();
 
+    // 流式响应处理
     try {
-        // 调用后端API
         const response = await fetch('manager.php', {
             method: 'POST',
             headers: {
@@ -246,30 +243,53 @@ async function sendMessage() {
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP错误: ${response.status}`);
+        if (!response.body) {
+            throw new Error('浏览器不支持流式响应');
         }
 
-        const result = await response.json();
+        let botMsgDiv = document.createElement('div');
+        botMsgDiv.className = 'message assistant-message';
+        let contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        botMsgDiv.appendChild(contentDiv);
+        chatMessages.appendChild(botMsgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        if (result.status !== 'success') {
-            throw new Error(result.message || '未知错误');
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let lines = buffer.split('\n');
+            buffer = lines.pop(); // 保留最后一个不完整的块
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const json = JSON.parse(line);
+                    if (json.content) {
+                        contentDiv.innerHTML += marked.parse(json.content);
+                        window.renderMath(contentDiv);
+                        contentDiv.querySelectorAll('pre code').forEach((block) => {
+                            hljs.highlightElement(block);
+                        });
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                } catch (e) {
+                    // 忽略解析错误
+                }
+            }
         }
-
-        // 显示后端返回的AI消息
-        addMessage(result.data.response, 'assistant');
-        chatHistory.push({ role: 'assistant', content: result.data.response });
-
-    } catch (error) {
-        console.error('请求失败:', error);
-        showError(`请求失败: ${error.message}`);
-
-    } finally {
-        // 恢复输入框和按钮
         hideThinking();
         messageInput.disabled = false;
         sendButton.disabled = false;
         messageInput.focus();
+    } catch (error) {
+        hideThinking();
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+        showError(`请求失败: ${error.message}`);
     }
 }
 function updateContent(contentDiv, reasoning, content) {
