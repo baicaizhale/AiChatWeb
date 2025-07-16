@@ -8,15 +8,8 @@ header('Content-Type: application/json; charset=utf-8');
 ini_set('display_errors', 0);
 error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
 
-const CONFIG = [
-    'api_token'    => '待填写',
-    'account_id'   => '待填写',
-    'model'        => '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
-    'timeout'      => 50,
-    'max_length'   => 10000,
-    'max_history'  => 6,
-    'max_context'  => 4096
-];
+// 配置���离，加载 config.php
+$config = require __DIR__ . '/config.php';
 
 try {
     $input = @file_get_contents('php://input');
@@ -46,7 +39,7 @@ try {
         $debug[] = "Empty message";
         throw new Exception("消息内容不能为空");
     }
-    if (strlen($message) > CONFIG['max_length']) {
+    if (strlen($message) > $config['max_length']) {
         $debug[] = "Message too long";
         throw new Exception("输入内容过长");
     }
@@ -63,7 +56,7 @@ try {
             in_array($record['role'], ['user', 'assistant'])) 
         {
             $cleanContent = htmlspecialchars(
-                mb_substr($record['content'], 0, CONFIG['max_length'], 'UTF-8'),
+                mb_substr($record['content'], 0, $config['max_length'], 'UTF-8'),
                 ENT_QUOTES,
                 'UTF-8'
             );
@@ -74,7 +67,7 @@ try {
         }
     }
 
-    $currentMessage = mb_substr($message, 0, CONFIG['max_length'], 'UTF-8');
+    $currentMessage = mb_substr($message, 0, $config['max_length'], 'UTF-8');
     $messagesChain[] = ["role" => "user", "content" => $currentMessage];
 
     $initialCount = count($messagesChain);
@@ -84,7 +77,7 @@ try {
     }
 
     $cutStart = 1;
-    while ($totalToken > CONFIG['max_context'] && count($messagesChain) > $cutStart) {
+    while ($totalToken > $config['max_context'] && count($messagesChain) > $cutStart) {
         $removedPair = array_splice($messagesChain, $cutStart, 2);
         foreach ($removedPair as $msg) {
             $totalToken -= ceil(mb_strlen($msg['content'], 'UTF-8') * 0.75);
@@ -94,14 +87,14 @@ try {
     $ch = curl_init();
     $endpoint = sprintf(
         "https://api.cloudflare.com/client/v4/accounts/%s/ai/run/%s",
-        CONFIG['account_id'],
-        CONFIG['model']
+        $config['account_id'],
+        $config['model']
     );
 
     curl_setopt_array($ch, [
         CURLOPT_URL            => $endpoint,
         CURLOPT_HTTPHEADER     => [
-            'Authorization: Bearer ' . CONFIG['api_token'],
+            'Authorization: Bearer ' . $config['api_token'],
             'Content-Type: application/json',
             'Accept: application/json'
         ],
@@ -112,7 +105,7 @@ try {
             "max_tokens"  => 1000
         ], JSON_THROW_ON_ERROR),
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => CONFIG['timeout'],
+        CURLOPT_TIMEOUT        => $config['timeout'],
         CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_SSL_VERIFYHOST => 2,
         CURLOPT_SSL_VERIFYPEER => true,
