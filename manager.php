@@ -8,7 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 ini_set('display_errors', 0);
 error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
 
-// 配置���离，加载 config.php
+// 配置�����离，加载 config.php
 $config = require __DIR__ . '/config.php';
 
 try {
@@ -141,21 +141,25 @@ try {
     }
 
     // 流式响应实现
-    header('Content-Type: application/x-ndjson; charset=utf-8');
-    header('Cache-Control: no-cache');
-    header('X-Accel-Buffering: no');
     if (isset($result['result']['response'])) {
-        // 如果API返回的是完整内容，直接分块输出
-        $chunks = preg_split('/(\n|<think>|<\/think>)/', $result['result']['response']);
-        foreach ($chunks as $chunk) {
-            $chunk = trim($chunk);
-            if ($chunk !== '') {
-                echo json_encode(["content" => $chunk], JSON_UNESCAPED_UNICODE) . "\n";
+        // Cloudflare返回的内容可能包含markdown和latex公式，直接逐字符流式输出
+        header('Content-Type: application/x-ndjson; charset=utf-8');
+        header('Cache-Control: no-cache');
+        header('X-Accel-Buffering: no');
+        $text = $result['result']['response'];
+        $buffer = '';
+        // 按字符流式输出，遇到换行或每40字符输出一次
+        for ($i = 0; $i < mb_strlen($text, 'UTF-8'); $i++) {
+            $buffer .= mb_substr($text, $i, 1, 'UTF-8');
+            if (mb_strlen($buffer, 'UTF-8') >= 40 || $buffer === "\n" || $i === mb_strlen($text, 'UTF-8') - 1) {
+                echo json_encode(["content" => $buffer], JSON_UNESCAPED_UNICODE) . "\n";
                 @ob_flush();
                 @flush();
-                usleep(100000); // 模拟流式
+                $buffer = '';
+                usleep(50000); // 更快流式体验
             }
         }
+        exit;
     } elseif (isset($result['choices'][0]['message']['content'])) {
         // 兼容旧格式
         $chunks = preg_split('/(\n|<think>|<\/think>)/', $result['choices'][0]['message']['content']);
