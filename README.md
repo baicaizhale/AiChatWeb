@@ -21,12 +21,14 @@ AiChatWeb 是一个基于 Web 的简易聊天界面，前端使用 HTML、CSS �
    ```bash
    git clone https://github.com/baicaizhale/AiChatWeb
    ```
-2. 启动本地 PHP 服务（如使用 XAMPP/WAMP 或命令行）：
+2. 修改`back.php`中的用户名与密钥（前后端搭配版）
+   使用本地版跳过第2、3步
+3. 启动本地 PHP 服务（如使用 XAMPP/WAMP 或命令行）：
    ```bash
    php -S localhost:8080
    ```
-3. 在浏览器中访问 `http://localhost:8080/index.html`
-4. 或者您也可以直接使用本地版，下载`/Local_Edition/index.html`并打开即可。
+4. 在浏览器中访问 `http://localhost:8080/index.html`
+   本地版直接打开`index.html`即可。
 
 ## 使用说明
 - 在输入框输入消息，点击发送即可与后端交互。

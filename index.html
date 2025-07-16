@@ -1,30 +1,77 @@
 <!DOCTYPE html>
+<!--suppress BuyFluidPluginNoteInspection -->
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 对话界面</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css">
+    <title>AI对话助手</title>
+    <script src="https://cdn.mengze.vip/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.mengze.vip/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.mengze.vip/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.mengze.vip/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="chatContainer" class="chat-container"></div>
-
-    <div class="input-area">
-        <div class="input-group">
-            <input type="text" id="messageInput" placeholder="发送消息">
-            <button id="sendButton">发送</button>
+    <div class="header">
+        <h1>AI对话助手<span style="color:#3498db;"></span></h1>
+    </div>
+    <div class="chat-container">
+        <div class="config-toggle" id="configToggle">⚙️</div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant-message">
+                <div class="message-content">
+                    <p>您好！我是AI助手。</p>
+                    <p>请点击右上角⚙️按钮进行配置。</p>
+                    <p>请在下方输入问题，我会立即开始回复。</p>
+                </div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="preset-selection" id="presetSelection">
+                <!-- 预设提示词按钮将通过JS动态生成 -->
+            </div>
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="输入您的问题..." autocomplete="off">
+                <button id="sendButton">发送</button>
+            </div>
+            <div class="error-message" id="errorDiv"></div>
         </div>
     </div>
-
-    <div id="loading" class="loading">思考中...</div>
-    <div id="error" class="error"></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/5.1.1/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+    <div id="configPanel" class="config-panel" style="display:none">
+        <div class="config-box">
+            <h2>AI 助手配置</h2>
+            <div class="config-group">
+                <label for="apiKey">API Key</label>
+                <input type="text" name="username" autocomplete="username" style="display:none">
+                <input type="password" id="apiKey" placeholder="输入API Key">
+            </div>
+            <div class="config-group">
+                <label for="model">模型</label>
+                <input type="text" id="model" value="deepseek-ai/DeepSeek-V3">
+            </div>
+            <div class="config-group">
+                <label>提示词设置</label>
+                <select id="presetPrompt" class="config-group">
+                    <option value="default">默认</option>
+                    <option value="math">数学专家</option>
+                    <option value="code">编程专家</option>
+                    <option value="creative">创意写作</option>
+                    <option value="custom">自定义提示词</option>
+                </select>
+            </div>
+            <div class="config-group" id="customPromptGroup" style="display:none">
+                <label for="customPrompt">自定义提示词</label>
+                <textarea id="customPrompt" rows="6" placeholder="输入自定义系统提示词..."></textarea>
+            </div>
+            <div class="config-actions">
+                <button class="close-btn" id="closeConfig">关闭</button>
+                <button class="save-btn" id="saveConfig">保存</button>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>

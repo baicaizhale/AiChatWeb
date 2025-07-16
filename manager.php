@@ -106,70 +106,38 @@ try {
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+
+    if (curl_errno($ch)) {
+        throw new Exception('请求失败: ' . curl_error($ch));
+    }
+
+    curl_close($ch);
 
     if ($httpCode !== 200) {
-        throw new Exception(sprintf(
-            "API请求失败 [HTTP %d] %s",
-            $httpCode,
-            substr($response, 0, 200)
-        ));
+        throw new Exception('API返回错误，HTTP状态码: ' . $httpCode);
     }
 
-    if (stripos($contentType, 'application/json') === false) {
-        throw new Exception("非JSON响应: " . substr($response, 0, 200));
-    }
+    $result = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
 
-    $responseData = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
-    
-    if (!isset($responseData['result']['response'])) {
-        error_log("异常响应结构: " . print_r($responseData, true));
-        throw new Exception("API响应结构异常");
+    if (!isset($result['choices'][0]['message']['content'])) {
+        throw new Exception('API响应格式无效');
     }
-
-    $filteredResponse = htmlspecialchars($responseData['result']['response'], ENT_QUOTES);
 
     $output = [
-        'success' => true,
-        'reply'   => $filteredResponse,
-        'meta'    => [
-            'model'     => CONFIG['model'],
-            'timestamp' => time(),
-            'context'   => [
-                'used' => count($messagesChain) - 1,
-                'cut'  => $initialCount - count($messagesChain)
-            ]
+        'status' => 'success',
+        'message' => '请求成功',
+        'data' => [
+            'response' => $result['choices'][0]['message']['content']
         ]
     ];
 
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode($output, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
-} catch (JsonException $e) {
-    error_log("JSON处理失败: " . $e->getMessage());
-    deliver_error("数据格式错误", 400);
 } catch (Exception $e) {
-    error_log("系统错误: " . $e->getMessage());
-    deliver_error($e->getMessage(), 500);
-} finally {
-    if (isset($ch) && is_resource($ch)) {
-        curl_close($ch);
-    }
-    exit;
+    http_response_code(400);
+    echo json_encode([
+        'status' => 'error',
+        'message' => $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 }
-
-function deliver_error(string $message, int $code = 500): void {
-    http_response_code($code);
-    $output = [
-        'success' => false,
-        'error'   => $message,
-        'code'    => $code
-    ];
-    
-    try {
-        echo json_encode($output, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-    } catch (JsonException $e) {
-        echo '{"success":false,"error":"系统内部错误"}';
-    }
-    exit;
-}
-
