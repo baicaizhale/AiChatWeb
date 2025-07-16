@@ -48,7 +48,7 @@ try {
     $debug[] = "Validated history: " . json_encode($history, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
     $messagesChain = [
-        ["role" => "system", "content" => "回答内容与思考过程不要重复"]
+        ["role" => "system", "content" => "你是一个助手，帮助用户回答问题。请根据用户的输入提供准确和有用的回答。"]
     ];
 
     foreach ($history as $record) {
