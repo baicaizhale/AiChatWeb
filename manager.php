@@ -21,38 +21,37 @@ const CONFIG = [
 try {
     $input = @file_get_contents('php://input');
     if ($input === false || strlen($input) === 0) {
-        file_put_contents('debug.log', "Empty or unreadable request body\n", FILE_APPEND);
+        echo "DEBUG: Empty or unreadable request body\n";
         throw new Exception("请求内容不可读");
     }
 
     $data = json_decode($input, true, 512, JSON_BIGINT_AS_STRING | JSON_THROW_ON_ERROR);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        file_put_contents('debug.log', "JSON decode error: " . json_last_error_msg() . "\n", FILE_APPEND);
+        echo "DEBUG: JSON decode error: " . json_last_error_msg() . "\n";
         throw new Exception("请求体解析失败: " . json_last_error_msg());
     }
 
-    file_put_contents('debug.log', "Received data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+    echo "DEBUG: Received data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
 
     $message = trim($data['message'] ?? '');
     $history = $data['history'] ?? [];
 
     if (!is_array($history)) {
-        file_put_contents('debug.log', "Invalid history format\n", FILE_APPEND);
+        echo "DEBUG: Invalid history format\n";
         throw new Exception("无效的历史数据格式");
     }
 
     if (empty($message)) {
-        file_put_contents('debug.log', "Empty message\n", FILE_APPEND);
+        echo "DEBUG: Empty message\n";
         throw new Exception("消息内容不能为空");
     }
     if (strlen($message) > CONFIG['max_length']) {
-        file_put_contents('debug.log', "Message too long\n", FILE_APPEND);
+        echo "DEBUG: Message too long\n";
         throw new Exception("输入内容过长");
     }
 
-    // Log validated data
-    file_put_contents('debug.log', "Validated message: $message\n", FILE_APPEND);
-    file_put_contents('debug.log', "Validated history: " . json_encode($history, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
+    echo "DEBUG: Validated message: $message\n";
+    echo "DEBUG: Validated history: " . json_encode($history, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
 
     $messagesChain = [
         ["role" => "system", "content" => "回答内容与思考过程不要重复"]
