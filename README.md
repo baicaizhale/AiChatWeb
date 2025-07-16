@@ -33,4 +33,4 @@ DeepSeekR1-ChatWeb 是一个基于 Web 的简易聊天界面，前端使用 HTML
 - 后端可根据需求扩展为接入 AI 或数据库。
 
 ## 许可证
-本项目采用 MIT 协议，详见 LICENSE 文件。
+本项目采用 GPL v3 协议，详见 LICENSE 文件。
