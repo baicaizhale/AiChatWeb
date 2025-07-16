@@ -138,8 +138,12 @@ try {
 
     $result = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
 
-    if (!isset($result['choices'][0]['message']['content'])) {
-        file_put_contents('debug.log', "Invalid API response format\n", FILE_APPEND);
+    // 兼容新API格式
+    if (isset($result['result']['response'])) {
+        $reply = $result['result']['response'];
+    } elseif (isset($result['choices'][0]['message']['content'])) {
+        $reply = $result['choices'][0]['message']['content'];
+    } else {
         throw new Exception('API响应格式无效: ' . $response);
     }
 
@@ -147,7 +151,7 @@ try {
         'status' => 'success',
         'message' => '请求成功',
         'data' => [
-            'response' => $result['choices'][0]['message']['content']
+            'response' => $reply
         ]
     ];
 
