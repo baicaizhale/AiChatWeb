@@ -1,7 +1,7 @@
-# DeepSeekR1-ChatWeb
+# AiChatWeb
 
 ## 项目简介
-DeepSeekR1-ChatWeb 是一个基于 Web 的简易聊天界面，前端使用 HTML、CSS 和 JavaScript，后端采用 PHP 实现。
+AiChatWeb 是一个基于 Web 的简易聊天界面，前端使用 HTML、CSS 和 JavaScript，后端采用 PHP 实现。
 
 ## 功能特性
 - 支持用户输入消息并显示在聊天窗口
@@ -19,7 +19,7 @@ DeepSeekR1-ChatWeb 是一个基于 Web 的简易聊天界面，前端使用 HTML
 ## 快速开始
 1. 克隆项目到本地：
    ```bash
-   git clone https://github.com/baicaizhale/DeepSeekR1-ChatWeb
+   git clone https://github.com/baicaizhale/AiChatWeb
    ```
 2. 启动本地 PHP 服务（如使用 XAMPP/WAMP 或命令行）：
    ```bash
