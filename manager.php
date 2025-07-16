@@ -26,6 +26,11 @@ try {
     }
 
     $data = json_decode($input, true, 512, JSON_BIGINT_AS_STRING | JSON_THROW_ON_ERROR);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        file_put_contents('debug.log', "JSON decode error: " . json_last_error_msg() . "\n", FILE_APPEND);
+        throw new Exception("请求体解析失败: " . json_last_error_msg());
+    }
+
     file_put_contents('debug.log', "Received data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
 
     $message = trim($data['message'] ?? '');
@@ -44,6 +49,10 @@ try {
         file_put_contents('debug.log', "Message too long\n", FILE_APPEND);
         throw new Exception("输入内容过长");
     }
+
+    // Log validated data
+    file_put_contents('debug.log', "Validated message: $message\n", FILE_APPEND);
+    file_put_contents('debug.log', "Validated history: " . json_encode($history, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
 
     $messagesChain = [
         ["role" => "system", "content" => "回答内容与思考过程不要重复"]
